@@ -1,0 +1,51 @@
+<!doctype html>
+<html><head><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BTC Signal</title>
+<style>
+:root{--bg:#06080d;--card:#10151f;--line:#202938;--txt:#f5f7fb;--muted:#8b97aa;--g:#35e58b;--r:#ff5570;--y:#ffd15c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,sans-serif}
+.app{max-width:600px;margin:auto;padding:env(safe-area-inset-top) 14px calc(18px + env(safe-area-inset-bottom))}
+header{display:flex;justify-content:space-between;align-items:center;padding:16px 2px 10px}.logo{font-weight:900;font-size:19px}.live{font-size:12px;color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;margin:10px 0}.hero{text-align:center;padding:24px 16px}
+.kicker{font-size:11px;color:var(--muted);letter-spacing:.13em;text-transform:uppercase}.price{font-size:40px;font-weight:900;margin:7px 0 16px}
+.signal{font-size:52px;font-weight:1000;margin:2px}.up{color:var(--g)}.down{color:var(--r)}.wait{color:var(--y)}
+.prob{font-size:28px;font-weight:800}.bar{height:9px;background:#252c38;border-radius:10px;margin:13px 0;overflow:hidden}.fill{height:100%;width:50%;background:var(--g);transition:.25s}
+.count{font-size:34px;font-weight:900}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tile{background:#0b1018;border-radius:14px;padding:13px}.tile span{font-size:11px;color:var(--muted);text-transform:uppercase}.tile b{display:block;font-size:19px;margin-top:4px}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}.btn{border:1px solid var(--line);background:#151c28;color:var(--txt);border-radius:13px;padding:13px;font-weight:800}
+.note{font-size:12px;color:var(--muted);line-height:1.5}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--r);margin-right:5px}.ok{background:var(--g)}
+</style></head>
+<body><main class="app">
+<header><div class="logo">₿ BTC SIGNAL</div><div class="live"><span id="dot" class="dot"></span><span id="feed">OFFLINE</span></div></header>
+<section class="card hero">
+<div class="kicker">Live BTC / USDT</div><div id="price" class="price">—</div>
+<div class="kicker">3-minute early signal</div><div id="signal" class="signal wait">WAIT</div>
+<div id="prob" class="prob">50%</div><div class="bar"><div id="fill" class="fill"></div></div>
+<div class="kicker">Short-term model range</div><div id="range">—</div>
+</section>
+<section class="card"><div class="kicker">15-minute market timer</div><div id="timer" class="count">--:--</div><div class="note">Local contract-cycle timer only. It is not connected to an official Kalshi contract yet.</div></section>
+<section class="card"><div class="grid">
+<div class="tile"><span>Buy Flow</span><b id="buy">—</b></div><div class="tile"><span>10s Momentum</span><b id="m10">—</b></div>
+<div class="tile"><span>30s Momentum</span><b id="m30">—</b></div><div class="tile"><span>Volatility</span><b id="vol">—</b></div>
+<div class="tile"><span>Trades</span><b id="trades">—</b></div><div class="tile"><span>Signal</span><b id="age">LIVE</b></div>
+</div></section>
+<section class="card"><div class="kicker">Paper mode</div><p class="note">Use this screen to collect signals and measure them against actual outcomes. No orders are placed. A verified Kalshi/CF Benchmarks reference adapter is required before claiming contract-level accuracy.</p>
+<div class="btns"><button class="btn" onclick="alert('Paper trade logging is the next module.')">LOG SIGNAL</button><button class="btn" onclick="alert('Alerts are ready to connect to browser notifications.')">ALERTS</button></div></section>
+</main>
+<script>
+const $=x=>document.getElementById(x);
+function money(x){return x==null?'—':Number(x).toLocaleString(undefined,{maximumFractionDigits:2})}
+function timer(){let d=new Date(),s=d.getMinutes()*60+d.getSeconds();let rem=900-(s%900);$('timer').textContent=String(Math.floor(rem/60)).padStart(2,'0')+':'+String(rem%60).padStart(2,'0')}
+setInterval(timer,250);timer();
+const ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws');
+ws.onopen=()=>{ $('feed').textContent='LIVE';$('dot').className='dot ok';ws.send('phone') };
+ws.onclose=()=>{ $('feed').textContent='OFFLINE';$('dot').className='dot' };
+ws.onmessage=e=>{let d=JSON.parse(e.data),s=d.state,m=d.model;
+$('price').textContent=money(s.price);$('signal').textContent=m.direction;
+$('signal').className='signal '+(m.direction==='UP'?'up':m.direction==='DOWN'?'down':'wait');
+$('prob').textContent=m.prob+'%';$('fill').style.width=m.prob+'%';
+$('fill').style.background=m.direction==='DOWN'?'var(--r)':m.direction==='NO TRADE'?'var(--y)':'var(--g)';
+$('range').textContent=m.range[0]==null?'—':money(m.range[0])+' — '+money(m.range[1]);
+$('buy').textContent=s.buy.toFixed(1)+'%';$('m10').textContent=m.m10+'%';$('m30').textContent=m.m30+'%';
+$('vol').textContent=m.vol;$('trades').textContent=s.trades.toLocaleString();
+};
+</script></body></html>
